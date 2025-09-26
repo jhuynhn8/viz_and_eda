@@ -1,0 +1,234 @@
+---
+title: "Viz_and_eda"
+output: html_document
+date: "2025-09-26"
+---
+
+```{r setup, include=FALSE}
+ library (tidyverse)
+ library (ggridges)
+ library (p8105.datasets)
+```
+
+ Import the weather data. 
+ 
+```{r}
+data("weather_df")
+```
+ 
+ Making our first plot 
+ 
+```{r}
+ggplot(data=weather_df, mapping=aes(x=tmin,y=tmax)) +
+  geom_point()
+```
+
+Another way to do it is through the pipe function
+```{r}
+weather_df %>% 
+  ggplot(aes(x=tmin,y=tmax)) +
+  geom_point()
+```
+
+```{r}
+ggp_weather_scatterplot=
+  weather_df %>% 
+  ggplot(aes(x=tmin,y=tmax)) +
+  geom_point()
+ggp_weather_scatterplot
+```
+
+Check that some rows are missing. 
+
+```{r}
+weather_df %>% 
+  filter(is.na(tmax))
+```
+
+## Fancier scatterplotes !  
+Note that aes is for mapping the points
+alpha sets the opacity 
+```{r}
+weather_df %>% 
+  ggplot(aes(x=tmin,y=tmax,color=name)) + 
+  geom_point(alpha=0.3)+
+  geom_smooth(se=FALSE)
+weather_df
+```
+
+ Where you define aesthetics can matter 
+ 
+```{r}
+weather_df %>% 
+  ggplot(aes(x=tmin,y=tmax)) + 
+  geom_point(aes(color=name, size=prcp),alpha=0.3)+
+  geom_smooth(se=FALSE)
+weather_df
+```
+
+Use facetting real quick: works by making multiple plots in a row to column framework 
+
+```{r}
+weather_df %>% 
+  ggplot(aes(x=tmin,y=tmax)) + 
+  geom_point(aes(color=name),alpha=0.3,size=0.3)+
+  geom_smooth(se=FALSE)+
+  facet_grid(.~name)
+weather_df
+
+weather_df %>% 
+  ggplot(aes(x=tmin,y=tmax)) + 
+  geom_point(aes(color=name),alpha=0.3,size=0.3)+
+  geom_smooth(se=FALSE)+
+  facet_grid(name~.)
+weather_df
+```
+
+Lets make a somewhat more interesting scatterplot 
+
+```{r}
+weather_df %>% 
+  ggplot(aes(x=tmin,y=tmax,color=name, shape=name)) + 
+  geom_point(aes(size=prcp),alpha=0.3)+
+  geom_smooth(se=FALSE)+
+  facet_grid(.~name)
+```
+
+Learning Assessment: Write a code chain that starts with weather_df; focuses only on Central Park, converts temperatures to Fahrenheit, makes a scatterplot of min vs. max temperature, and overlays a linear regression line (using options in geom_smooth())
+
+This R code is taking a dataset of weather observations and producing a scatterplot of daily minimum versus maximum temperatures for Central Park, New York. It begins with `weather_df` and uses the pipe operator `%>%` to pass the data through a sequence of transformations. The first step filters the dataset so that only rows where the variable `name` equals `"CentralPark_NY"` remain. Next, `mutate()` creates two new variables—`tmax_fahr` and `tmin_fahr`—by converting the maximum and minimum daily temperatures from Celsius to Fahrenheit using the formula °F = (°C × 9/5) + 32. With these new variables in place, the code calls `ggplot()` to set up a graph in which tmin_fahr is mapped to the x-axis and tmax_fahr to the y-axis. The `geom_point(alpha = 0.5)` layer then plots the data as semi-transparent points, which helps visualize overlapping values. Finally, `geom_smooth(method = "lm", se = FALSE)` adds a linear regression line to the plot without showing the shaded confidence interval.
+
+```{r}
+weather_df %>% 
+  filter(name=="CentralPark_NY") %>% 
+  mutate(
+    tmax_fahr=tmax*(9/5)+32,
+    tmin_fahr=tmin*(9/5)+32) %>% 
+  ggplot(aes(x=tmin_fahr,y=tmax_fahr))+
+  geom_point(alpha=0.5)+
+  geom_smooth(method = "lm",se=FALSE)
+```
+
+##Small things
+
+```{r}
+weather_df %>% 
+  ggplot(aes(x=tmin,y=tmax,color=name,shape=name))+
+  #geom_point(alpha=0.3)+
+  geom_smooth(se=FALSE)
+
+weather_df %>% 
+  ggplot(aes(x=tmin,y=tmax,color=name,shape=name))+
+  geom_smooth(se=FALSE)+
+  geom_point()
+```
+
+```{r}
+weather_df %>% 
+  ggplot(aes(x=tmin,y=tmax))+
+  geom_hex()
+```
+
+```{r}
+weather_df %>% 
+  ggplot(aes(x=tmin,y=tmax))+
+  geom_point(color="green")
+```
+
+##Univariate plots 
+
+```{r}
+weather_df %>% 
+  ggplot(aes(x=tmin))+
+  geom_histogram(color="white",fill="green")
+```
+
+```{r}
+weather_df %>% 
+  ggplot(aes(x=tmin,fill=name))+
+  geom_histogram()+
+  facet_grid(name~.)
+```
+
+maybe a density plot ? 
+
+```{r}
+weather_df %>% 
+  ggplot(aes(x=tmin,fill=name))+
+  geom_density(alpha=0.2)
+```
+
+Box plot 
+
+```{r}
+weather_df %>% 
+  ggplot(aes(x=name,y=tmin))+
+  geom_boxplot(aes(fill=name))
+```
+
+violin plots 
+
+```{r}
+weather_df %>% 
+  ggplot(aes(x=name,y=tmin,fill=name))+
+  geom_violin()
+```
+
+ridge plot
+
+```{r}
+weather_df %>% 
+  ggplot(aes(x=tmin,y=name,fill=name))+
+  geom_density_ridges()
+```
+
+LA univariate plots 
+Learning assessment: Make plots that compare precipitation across locaations. Try a histogram, a density plot, a boxplot, a violin plot, and a ridgeplot; use aesthetic mappings to make your figure readable
+
+Density Plot 
+```{r}
+weather_df %>% 
+  filter(prcp>5, prcp<1000) %>% 
+  ggplot(aes(x=prcp,fill=name))+
+  geom_density()
+
+weather_df %>% 
+  ggplot(aes(x=prcp,fill=name))+
+  geom_density()
+```
+
+Ridge plot 
+```{r}
+weather_df %>% 
+  ggplot(aes(x=prcp,y=name,fill=name))+
+  geom_density_ridges(scale=0.85)
+```
+
+Boxplot
+```{r}
+weather_df %>% 
+  ggplot(aes(y=prcp,x=name))+
+  geom_boxplot()
+```
+
+##saving and embedding plots 
+
+saving plots 
+
+```{r}
+ggp_weather_violin=
+weather_df %>% 
+  ggplot(aes(x=name,y=tmin,fill=name))+
+  geom_violin()
+
+ggp_weather_violin
+
+ggsave("plots/violin_plot.pdf",ggp_weather_violin,
+       width=8,height=6)
+  
+```
+
+
+
+
+ 
