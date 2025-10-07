@@ -84,5 +84,107 @@ ggplot(data=molokai_df,aes(x=date,y=tmax,color=name))+
   geom_line(data=central_park_df) #adding in another data set 
 ```
 
+## `patchwork`
+
+Making 3 fundamentally different plots and then stitching them together using patchwork 
+```{r}
+ggp_tmax_tmin= 
+  weather_df %>% 
+  ggplot(aes(x=tmin,y=tmax,color=name))+
+  geom_point(alpha=0.5)+
+  theme(legend.position = "none")
+
+ggp_prec_density=
+  weather_df %>% 
+  filter(prcp>0) %>% 
+  ggplot(aes(x=prcp,fill=name))+
+  geom_density(alpha=0.5)+
+  theme(legend.position = "none")
+
+ggp_temp_season=
+  weather_df %>% 
+  ggplot(aes(x=date,y=tmax,color=name))+
+  geom_point(alpha=0.5)+
+  geom_smooth(se=FALSE)+
+  theme(legend.position = "bottom")
+  
+ggp_tmax_tmin
+ggp_prec_density
+ggp_temp_season
+
+(ggp_tmax_tmin+ggp_prec_density)/ggp_temp_season
+#multiple panels in the same figure ==> allows us to squeeze in important things about the data set without taking up too much space (good for papers)
+```
+
+## Data Manipulation 
+Let's make temperature violin plots. 
+```{r}
+weather_df %>% 
+  mutate(name=fct_relevel(name,c("Molokai_HI","CentralPark_NY","Waterhole_WA"))) %>% #Resetting the order 
+  ggplot(aes(x=name,y=tmax,fill=name))+
+  geom_violin(alpha=0.5)
+```
+
+```{r}
+weather_df %>% 
+  mutate(name=fct_reorder(name,tmax)) %>% 
+  ggplot(aes(x=name,y=tmax,fill=name))+
+  geom_violin(alpha=0.5)
+```
+
+What about data tidiness?? 
+x-axis: study visit y-axis:BDI score // make into box plots 
+```{r}
+pulse_df=
+  haven::read_sas("datasets/public_pulse_data.sas7bdat") %>% 
+  janitor::clean_names() %>% 
+  pivot_longer(
+    bdi_score_bl:bdi_score_12m,
+    names_to="visit",
+    names_prefix="bdi_score_", #gets rid of prefix so axis is cleaner 
+    values_to="bdi"
+  ) %>% 
+  mutate(visit=fct_inorder(visit)) #this solves the problem below
+
+pulse_df %>% 
+  ggplot(aes(x=visit,y=bdi))+
+  geom_boxplot() #issue with this initial plot is that BL comes last due to alphabetical 
+```
+
+##Other materials 
+
+```{r}
+pup_data = 
+  read_csv("datasets/FAS_pups.csv", na = c("NA", ".", ""), skip = 3) |>
+  janitor::clean_names() |>
+  mutate(
+    sex = 
+      case_match(
+        sex, 
+        1 ~ "male", 
+        2 ~ "female")) # 1 codes to male and 2 codes to female 
+
+litter_data = 
+  read_csv("datasets/FAS_litters.csv", na = c("NA", ".", "")) |>
+  janitor::clean_names() |>
+  separate(group, into = c("dose", "day_of_tx"), sep = 3) #this column group contains multiple things: dose and day of so we want to separate it CON7 --> CON and 7 are separated now 
+
+fas_data = left_join(pup_data, litter_data, by = "litter_number") 
+
+fas_data |> 
+  select(sex, dose, day_of_tx, pd_ears:pd_walk) |> 
+  pivot_longer(
+    pd_ears:pd_walk,
+    names_to = "outcome", 
+    names_prefix="pd_",
+    values_to = "pn_day") |> 
+  drop_na() |> 
+  mutate(outcome = forcats::fct_reorder(outcome, pn_day, median)) |> 
+  ggplot(aes(x = dose, y = pn_day)) + 
+  geom_violin() + 
+  facet_grid(day_of_tx ~ outcome) #day_of_tx defines the rows at each level and outcome defines the columns 
+
+```
+
 
 
