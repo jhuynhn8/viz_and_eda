@@ -33,7 +33,7 @@ weather_df %>%
 ## Scales: tells the axis how to behave 
 
 ```{r}
-weather_df %>% 
+ggp_temp=weather_df %>% 
   filter(tmax>10,tmax<30) %>% 
   ggplot(aes(x=tmin,y=tmax))+     #same thing as doing limits = c
   geom_point(aes(color=name),alpha=0.5) +
@@ -55,7 +55,33 @@ weather_df %>%
   viridis::scale_color_viridis(
     discrete=TRUE
   )
+ggsave("weather_scatterplot.png",ggp_temp)
+```
 
+## Themes 
+
+Make my base plot. 
+
+```{r}
+ggp_temp+
+  theme_minimal()+
+  theme(legend.position="bottom")
+```
+
+## Adding data in geoms 
+
+```{r}
+central_park_df=
+  weather_df %>% 
+  filter(name=="CentralPark_NY")
+
+molokai_df=
+  weather_df %>% 
+  filter(name=="Molokai_HI")
+
+ggplot(data=molokai_df,aes(x=date,y=tmax,color=name))+
+  geom_point()+
+  geom_line(data=central_park_df) #adding in another data set 
 ```
 
 
